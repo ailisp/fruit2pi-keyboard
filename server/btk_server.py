@@ -102,6 +102,8 @@ class BTKbDevice():
     # send a string to the bluetooth host machine
     def send_string(self, message):
         try:
+            print('--------------')
+            print(bytes(message))
             self.cinterrupt.send(bytes(message))
         except OSError as err:
             error(err)
