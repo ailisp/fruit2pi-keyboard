@@ -99,7 +99,7 @@ class Keyboard():
             #     pass
             except BaseException as e:
                 print('An error occurred:', file=sys.stderr)
-                print(e, file=sys.stderr)
+                print(e.__repr__(), file=sys.stderr)
 
     # forward keyboard events to the dbus service
     def send_input(self):
