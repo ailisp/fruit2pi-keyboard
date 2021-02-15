@@ -15,7 +15,7 @@ from evdev import *
 import keymap  # used to map evdev input to hid keodes
 
 def state_transformer(state):
-    state
+    return state
 
 
 # Define a client to listen to local key events
