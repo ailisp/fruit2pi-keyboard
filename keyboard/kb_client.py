@@ -97,7 +97,7 @@ class Keyboard():
                         self.send_input()
             # except KeyboardInterrupt:
             #     pass
-            except e:
+            except Exception as e:
                 print('An error occurred:', file=sys.stderr)
                 print(e, file=sys.stderr)
 
