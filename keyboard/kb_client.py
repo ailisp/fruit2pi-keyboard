@@ -14,6 +14,9 @@ import evdev  # used to get input from the keyboard
 from evdev import *
 import keymap  # used to map evdev input to hid keodes
 
+def state_transformer(state):
+    state
+
 
 # Define a client to listen to local key events
 class Keyboard():
@@ -98,11 +101,11 @@ class Keyboard():
     # forward keyboard events to the dbus service
     def send_input(self):
         bin_str = ""
-        element = self.state[2]
+        state = state_transformer(self.state)
+        print(*state)
+        element = state[2]
         for bit in element:
             bin_str += str(bit)
-        a = self.state
-        print(*a)
         self.iface.send_keys(int(bin_str, 2), self.state[4:10])
 
 
