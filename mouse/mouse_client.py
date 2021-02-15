@@ -87,8 +87,8 @@ class MouseInput(InputDevice):
         self.last = 0
         self.bus = dbus.SystemBus()
         self.btkservice = self.bus.get_object(
-            'org.thanhle.btkbservice', '/org/thanhle/btkbservice')
-        self.iface = dbus.Interface(self.btkservice, 'org.thanhle.btkbservice')
+            'org.fruit2pi.btkbservice', '/org/fruit2pi/btkbservice')
+        self.iface = dbus.Interface(self.btkservice, 'org.fruit2pi.btkbservice')
         self.mouse_delay = 20 / 1000
         self.mouse_speed = 1
 

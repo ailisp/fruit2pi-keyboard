@@ -1,5 +1,5 @@
 #
-# https://thanhle.me/make-raspberry-pi3-as-an-emulator-bluetooth-keyboard/
+# https://fruit2pi.me/make-raspberry-pi3-as-an-emulator-bluetooth-keyboard/
 #
 #
 #

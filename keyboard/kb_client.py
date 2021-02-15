@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# Thanhle Bluetooth keyboard emulation service
+# Fruit2pi Bluetooth keyboard emulation service
 # keyboard copy client.
 # Reads local key events and forwards them to the btk_server DBUS service
 #
@@ -45,8 +45,8 @@ class Keyboard():
 
         self.bus = dbus.SystemBus()
         self.btkservice = self.bus.get_object(
-            'org.thanhle.btkbservice', '/org/thanhle/btkbservice')
-        self.iface = dbus.Interface(self.btkservice, 'org.thanhle.btkbservice')
+            'org.fruit2pi.btkbservice', '/org/fruit2pi/btkbservice')
+        self.iface = dbus.Interface(self.btkservice, 'org.fruit2pi.btkbservice')
         print("waiting for keyboard")
         # keep trying to key a keyboard
         have_dev = False
@@ -85,11 +85,15 @@ class Keyboard():
 
     # poll for keyboard events
     def event_loop(self):
-        for event in self.dev.read_loop():
-            # only bother if we hit a key and its an up or down event
-            if event.type == ecodes.EV_KEY and event.value < 2:
-                self.change_state(event)
-                self.send_input()
+        while True:
+            try:
+                for event in self.dev.read_loop():
+                    # only bother if we hit a key and its an up or down event
+                    if event.type == ecodes.EV_KEY and event.value < 2:
+                        self.change_state(event)
+                        self.send_input()
+            except KeyboardInterrupt:
+                pass
 
     # forward keyboard events to the dbus service
     def send_input(self):
@@ -103,9 +107,7 @@ class Keyboard():
 
 
 if __name__ == "__main__":
-
     print("Setting up keyboard")
-
     kb = Keyboard()
 
     print("starting event loop")

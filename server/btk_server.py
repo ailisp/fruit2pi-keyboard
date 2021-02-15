@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# thanhle Bluetooth keyboard/Mouse emulator DBUS Service
+# fruit2pi Bluetooth keyboard/Mouse emulator DBUS Service
 #
 
 from __future__ import absolute_import, print_function
@@ -23,8 +23,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 class BTKbDevice():
     # change these constants
-    MY_ADDRESS = "E4:A7:A0:E0:0E:97"
-    MY_DEV_NAME = "ThanhLe_Keyboard_Mouse"
+    MY_DEV_NAME = "Fruit2pi_Keyboard"
 
     # define some constants
     P_CTRL = 17  # Service port - must match port configured in SDP record
@@ -48,6 +47,7 @@ class BTKbDevice():
         os.system("hciconfig hci0 name " + BTKbDevice.MY_DEV_NAME)
         # make the device discoverable
         os.system("hciconfig hci0 piscan")
+
 
     # set up a bluez profile to advertise device capabilities from a loaded service record
     def init_bluez_profile(self):
@@ -113,15 +113,15 @@ class BTKbService(dbus.service.Object):
         print("1. Setting up service")
         # set up as a dbus service
         bus_name = dbus.service.BusName(
-            "org.thanhle.btkbservice", bus=dbus.SystemBus())
+            "org.fruit2pi.btkbservice", bus=dbus.SystemBus())
         dbus.service.Object.__init__(
-            self, bus_name, "/org/thanhle/btkbservice")
+            self, bus_name, "/org/fruit2pi/btkbservice")
         # create and setup our device
         self.device = BTKbDevice()
         # start listening for connections
         self.device.listen()
 
-    @dbus.service.method('org.thanhle.btkbservice', in_signature='yay')
+    @dbus.service.method('org.fruit2pi.btkbservice', in_signature='yay')
     def send_keys(self, modifier_byte, keys):
         print("Get send_keys request through dbus")
         print("key msg: ", keys)
@@ -134,7 +134,7 @@ class BTKbService(dbus.service.Object):
             count += 1
         self.device.send_string(state)
 
-    @dbus.service.method('org.thanhle.btkbservice', in_signature='yay')
+    @dbus.service.method('org.fruit2pi.btkbservice', in_signature='yay')
     def send_mouse(self, modifier_byte, keys):
         state = [0xA1, 2, 0, 0, 0, 0]
         count = 2
