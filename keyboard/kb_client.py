@@ -95,8 +95,11 @@ class Keyboard():
                     if event.type == ecodes.EV_KEY and event.value < 2:
                         self.change_state(event)
                         self.send_input()
-            except KeyboardInterrupt:
-                pass
+            # except KeyboardInterrupt:
+            #     pass
+            except e:
+                print('An error occurred:', file=sys.stderr)
+                print(e, file=sys.stderr)
 
     # forward keyboard events to the dbus service
     def send_input(self):
