@@ -26,7 +26,7 @@ if __name__ == "__main__":
     if argv[1] == '-c':
         send_control = True
         del argv[1]
-    data = list(sys.argv[1:].map(lambda x: int(x)))
+    data = list(map(int, sys.argv[1:]))
     dc = BtkDataClient()
     if send_control:
         print("Sending control: " + data)
