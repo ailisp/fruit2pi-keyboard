@@ -48,7 +48,6 @@ class BTKbDevice():
         # make the device discoverable
         os.system("hciconfig hci0 piscan")
 
-
     # set up a bluez profile to advertise device capabilities from a loaded service record
     def init_bluez_profile(self):
         print("4. Configuring Bluez Profile")
@@ -106,6 +105,16 @@ class BTKbDevice():
             print(bytes(message))
             self.cinterrupt.send(bytes(message))
         except OSError as err:
+            print('error in send_string')
+            error(err)
+
+    def send_control_string(self, message):
+        try:
+            print('--------------')
+            print(bytes(message))
+            self.ccontrol.send(bytes(message))
+        except OSError as err:
+            print('error in send_control_string')
             error(err)
 
 
@@ -145,6 +154,14 @@ class BTKbService(dbus.service.Object):
                 state[count] = int(key_code)
             count += 1
         self.device.send_string(state)
+    
+    @dbus.service.method('org.fruit2pi.btkbservice', in_signature='yay')
+    def send_data(self, data):
+        self.device.send_string(data)
+
+    @dbus.service.method('org.fruit2pi.btkbservice', in_signature='yay')
+    def send_control_data(self, data):
+        self.device.send_control_string(data)
 
 
 # main routine

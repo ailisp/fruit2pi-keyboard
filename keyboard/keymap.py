@@ -1,8 +1,4 @@
 #
-# https://fruit2pi.me/make-raspberry-pi3-as-an-emulator-bluetooth-keyboard/
-#
-#
-#
 # Convert value returned from Linux event device ("evdev") to a HID code. This
 # is reverse of what's actually hardcoded in the kernel.
 #

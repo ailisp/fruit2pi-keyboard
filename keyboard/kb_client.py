@@ -95,8 +95,6 @@ class Keyboard():
                     if event.type == ecodes.EV_KEY and event.value < 2:
                         self.change_state(event)
                         self.send_input()
-            # except KeyboardInterrupt:
-            #     pass
             except BaseException as e:
                 print('An error occurred:', file=sys.stderr)
                 print(e.__repr__(), file=sys.stderr)
