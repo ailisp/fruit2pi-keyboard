@@ -29,9 +29,9 @@ if __name__ == "__main__":
     data = list(map(int, sys.argv[1:]))
     dc = BtkDataClient()
     if send_control:
-        print("Sending control: " + data)
+        print("Sending control: ", data)
         dc.send_control_data(data)
     else:
-        print("Sending: " + data)
+        print("Sending: ", data)
         dc.send_data(data)
     print("Done.")
