@@ -20,7 +20,7 @@ class BtkDataClient():
 if __name__ == "__main__":
     argv = sys.argv
     if(len(argv) < 2):
-        print("Usage: send_raw [-c] num1 num2 ... numn ")
+        print("Usage: send.py [-c] num1 num2 ... numn ")
         exit()
     send_control = False
     if argv[1] == '-c':

@@ -155,11 +155,11 @@ class BTKbService(dbus.service.Object):
             count += 1
         self.device.send_string(state)
     
-    @dbus.service.method('org.fruit2pi.btkbservice', in_signature='yay')
+    @dbus.service.method('org.fruit2pi.btkbservice', in_signature='ay')
     def send_data(self, data):
         self.device.send_string(data)
 
-    @dbus.service.method('org.fruit2pi.btkbservice', in_signature='yay')
+    @dbus.service.method('org.fruit2pi.btkbservice', in_signature='ay')
     def send_control_data(self, data):
         self.device.send_control_string(data)
 
