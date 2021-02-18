@@ -18,6 +18,7 @@ from dbus.mainloop.glib import DBusGMainLoop
 import logging
 from logging import debug, info, warning, error
 import selectors
+import threading
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -171,7 +172,9 @@ class BTKbService(dbus.service.Object):
         # create and setup our device
         self.device = BTKbDevice()
         # start listening for connections
-        self.device.listen()
+        t = threading.Thread(self.device.listen, args=())
+        t.daemon = True
+        t.start()
 
     @dbus.service.method('org.fruit2pi.btkbservice', in_signature='yay')
     def send_keys(self, modifier_byte, keys):
