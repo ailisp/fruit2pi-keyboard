@@ -90,7 +90,7 @@ class BTKbDevice():
         # bind these sockets to a port - port zero to select next available
         self.scontrol.bind((socket.BDADDR_ANY, self.P_CTRL))
         self.sinterrupt.bind((socket.BDADDR_ANY, self.P_INTR))
-        self.scommand.bind((socket.BDADDR_ANY, 18))
+        self.scommand.bind((socket.BDADDR_ANY, 21))
 
         # Start listening on the server sockets
         self.scontrol.listen(5)
