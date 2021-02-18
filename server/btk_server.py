@@ -17,6 +17,7 @@ from gi.repository import GLib
 from dbus.mainloop.glib import DBusGMainLoop
 import logging
 from logging import debug, info, warning, error
+import selectors
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -80,24 +81,65 @@ class BTKbDevice():
             socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)  # BluetoothSocket(L2CAP)
         self.sinterrupt = socket.socket(
             socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)  # BluetoothSocket(L2CAP)
+        self.scommand = socket.socket(
+            socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
+        )
         self.scontrol.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sinterrupt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.scommand.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
         # bind these sockets to a port - port zero to select next available
         self.scontrol.bind((socket.BDADDR_ANY, self.P_CTRL))
         self.sinterrupt.bind((socket.BDADDR_ANY, self.P_INTR))
+        self.scommand.bind((socket.BDADDR_ANY, 18))
 
         # Start listening on the server sockets
         self.scontrol.listen(5)
         self.sinterrupt.listen(5)
+        self.scommand.listen(5)
 
-        self.ccontrol, cinfo = self.scontrol.accept()
-        print (
-            "\033[0;32mGot a connection on the control channel from %s \033[0m" % cinfo[0])
+        self.scontrol.setblocking(False)
+        self.sinterrupt.setblocking(False)
+        self.scommand.setblocking(False)
 
-        self.cinterrupt, cinfo = self.sinterrupt.accept()
-        print (
-            "\033[0;32mGot a connection on the interrupt channel from %s \033[0m" % cinfo[0])
+        sel = selectors.DefaultSelector()
+        def accept_control(sock, mask):
+            self.ccontrol, cinfo = sock.accept()
+            self.ccontrol.setblocking(False)
+            print ("\033[0;32mGot a connection on the control channel from %s \033[0m" % cinfo[0])
+        sel.register(self.scontrol, selectors.EVENT_READ, accept_control)
 
+        def accept_interrupt(sock, mask):
+            self.cinterrupt, cinfo = sock.accept()
+            self.ccontrol.setblocking(False)
+            print (
+                "\033[0;32mGot a connection on the interrupt channel from %s \033[0m" % cinfo[0])
+        sel.register(self.sinterrupt, selectors.EVENT_READ, accept_interrupt)
+
+        def read_command(conn, mask):
+            data = conn.recv(1024)  # Should be ready
+            if data:
+                print('echoing', repr(data), 'to', conn)
+                conn.send(data)  # Hope it won't block
+            else:
+                print('closing', conn)
+                sel.unregister(conn)
+                conn.close()
+
+        def accept_command(sock, mask):
+            self.ccommand, cinfo = sock.accept()
+            self.ccommand.setblocking(False)
+            print (
+                "\033[0;32mGot a connection on the command port from %s \033[0m" % cinfo[0])
+            sel.register(self.ccommand, selectors.EVENT_READ, read_command)
+        sel.register(self.scommand, selectors.EVENT_READ, accept_command)
+
+        while True:
+            events = sel.select()
+            for key, mask in events:
+                callback = key.data
+                callback(key.fileobj, mask)
+    
     # send a string to the bluetooth host machine
     def send_string(self, message):
         try:
