@@ -83,7 +83,6 @@ class BTKbDevice():
             socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)  # BluetoothSocket(L2CAP)
         self.scommand = socket.socket(
             socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
-        )
         self.scontrol.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sinterrupt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.scommand.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
