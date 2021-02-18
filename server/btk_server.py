@@ -172,7 +172,7 @@ class BTKbService(dbus.service.Object):
         # create and setup our device
         self.device = BTKbDevice()
         # start listening for connections
-        t = threading.Thread(self.device.listen, args=())
+        t = threading.Thread(target=self.device.listen, args=())
         t.daemon = True
         t.start()
 
