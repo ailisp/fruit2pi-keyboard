@@ -1,3 +1,5 @@
+Fruit2Pi Fully Programmable Bluetooth Keyboard
+
 # Setup steps
 
 ## Setup

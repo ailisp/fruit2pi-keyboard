@@ -19,8 +19,52 @@ import logging
 from logging import debug, info, warning, error
 import selectors
 import threading
+from cbor._cbor import dumps, loads
 
 logging.basicConfig(level=logging.DEBUG)
+
+def list_programs():
+    return {'files': ['foo', 'bar']}
+
+def edit_program(name, code):
+    return {'status': 'success'}
+
+def delete_programs(names):
+    return {'status': 'success'}
+
+def set_program(name):
+    return {'status': 'success'}
+    
+
+def process_command(data):
+    try:
+        cmds = loads(data)
+    except:
+        return {'error': 'parse'}
+    if cmds.type != list or not cmds:
+        return {'error': 'format'}
+    cmd = cmds[0]
+    args = cmds[1:]
+    if cmd == 'list':
+        return list_programs()
+    elif cmd == 'edit':
+        if len(args) != 2:
+            return {'error': 'format'}
+        name = args[0]
+        code = args[1]
+        return edit_program(name, code)
+    elif cmd == 'delete':
+        if not args:
+            return {'error': 'format'}
+        return delete_programs(args)
+    elif cmd == 'set':
+        if len(args) != 1:
+            return None
+        name = args[0]
+        return set_program(name)
+    else:
+        return {'error': 'format'}
+
 
 
 class BTKbDevice():
@@ -117,10 +161,10 @@ class BTKbDevice():
         sel.register(self.sinterrupt, selectors.EVENT_READ, accept_interrupt)
 
         def read_command(conn, mask):
-            data = conn.recv(1024)  # Should be ready
+            data = conn.recv(65535)  # Should be ready
             if data:
-                print('echoing', repr(data), 'to', conn)
-                conn.send(data)  # Hope it won't block
+                resp = process_command(data)
+                conn.send(dumps(resp))
             else:
                 print('closing', conn)
                 sel.unregister(conn)
@@ -161,7 +205,6 @@ class BTKbDevice():
 
 
 class BTKbService(dbus.service.Object):
-
     def __init__(self):
         print("1. Setting up service")
         # set up as a dbus service
