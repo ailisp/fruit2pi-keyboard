@@ -41,7 +41,7 @@ def process_command(data):
         cmds = loads(data)
     except:
         return {'error': 'parse'}
-    if cmds.type != list or not cmds:
+    if type(cmds) != list or not cmds:
         return {'error': 'format'}
     cmd = cmds[0]
     args = cmds[1:]
