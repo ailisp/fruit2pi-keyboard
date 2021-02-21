@@ -23,16 +23,28 @@ from cbor._cbor import dumps, loads
 
 logging.basicConfig(level=logging.DEBUG)
 
+programs_dir = os.path.join(sys.path[0], 'programs')
+
 def list_programs():
-    return {'files': ['foo', 'bar']}
+    return {'programs': os.path.listdir(programs_dir)}
 
 def edit_program(name, code):
+    with open(os.path.join(programs_dir, name), 'w') as f:
+        f.write(code)
     return {'status': 'success'}
 
 def delete_programs(names):
+    for name in names:
+        f = os.path.join(programs_dir, names)
+        if os.path.exists(f):
+            os.remove(f)
     return {'status': 'success'}
 
 def set_program(name):
+    global current_program
+    with open(os.path.join(programs_dir, name)) as f:
+        program = f.read()
+        current_program = {'name': name, 'program': program}
     return {'status': 'success'}
     
 
@@ -66,6 +78,8 @@ def process_command(data):
         return {'error': 'format'}
 
 
+fruit2pi = None
+current_program = {'name': 'default', 'program': 'fruit2pi.send(event)'}
 
 class BTKbDevice():
     # change these constants
@@ -83,6 +97,7 @@ class BTKbDevice():
         print("2. Setting up BT device")
         self.init_bt_device()
         self.init_bluez_profile()
+        global fruit2pi = self
 
     # configure the bluetooth hardware device
     def init_bt_device(self):
@@ -185,7 +200,7 @@ class BTKbDevice():
                 callback(key.fileobj, mask)
     
     # send a string to the bluetooth host machine
-    def send_string(self, message):
+    def send(self, message):
         try:
             print('--------------')
             print(bytes(message))
@@ -220,8 +235,9 @@ class BTKbService(dbus.service.Object):
         t.start()
 
     @dbus.service.method('org.fruit2pi.btkbservice', in_signature='yay')
-    def send_keys(self, modifier_byte, keys):
-        print("Get send_keys request through dbus")
+    def on_receive_keys(self, modifier_byte, keys):
+        global current_program
+        print("Get on_receive_keys request through dbus")
         print("key msg: ", keys)
         state = [ 0xA1, 1, 0, 0, 0, 0, 0, 0, 0, 0 ]
         state[2] = int(modifier_byte)
@@ -230,7 +246,8 @@ class BTKbService(dbus.service.Object):
             if(count < 10):
                 state[count] = int(key_code)
             count += 1
-        self.device.send_string(state)
+        event = state
+        eval(current_program['program'])
 
     @dbus.service.method('org.fruit2pi.btkbservice', in_signature='yay')
     def send_mouse(self, modifier_byte, keys):

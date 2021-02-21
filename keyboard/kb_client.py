@@ -102,12 +102,12 @@ class Keyboard():
     # forward keyboard events to the dbus service
     def send_input(self):
         bin_str = ""
-        state = state_transformer(self.state)
+        state = self.state
         print(*state)
         element = state[2]
         for bit in element:
             bin_str += str(bit)
-        self.iface.send_keys(int(bin_str, 2), self.state[4:10])
+        self.iface.on_receive_keys(int(bin_str, 2), self.state[4:10])
 
 
 if __name__ == "__main__":
