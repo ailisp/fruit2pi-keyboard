@@ -97,7 +97,8 @@ class BTKbDevice():
         print("2. Setting up BT device")
         self.init_bt_device()
         self.init_bluez_profile()
-        global fruit2pi = self
+        global fruit2pi
+        fruit2pi = self
 
     # configure the bluetooth hardware device
     def init_bt_device(self):
