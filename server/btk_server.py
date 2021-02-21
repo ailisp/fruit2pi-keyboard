@@ -26,7 +26,7 @@ logging.basicConfig(level=logging.DEBUG)
 programs_dir = os.path.join(sys.path[0], 'programs')
 
 def list_programs():
-    return {'programs': os.path.listdir(programs_dir)}
+    return {'programs': os.listdir(programs_dir)}
 
 def edit_program(name, code):
     with open(os.path.join(programs_dir, name), 'w') as f:
