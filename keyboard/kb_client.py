@@ -14,8 +14,61 @@ import evdev  # used to get input from the keyboard
 from evdev import *
 import keymap  # used to map evdev input to hid keodes
 
-def state_transformer(state):
-    return state
+def list_programs():
+    return {'programs': os.listdir(programs_dir)}
+
+def edit_program(name, code):
+    with open(os.path.join(programs_dir, name), 'w') as f:
+        f.write(code)
+    return {'status': 'success'}
+
+def delete_programs(names):
+    for name in names:
+        f = os.path.join(programs_dir, names)
+        if os.path.exists(f):
+            os.remove(f)
+    return {'status': 'success'}
+
+def set_program(name):
+    global current_program
+    with open(os.path.join(programs_dir, name)) as f:
+        program = f.read()
+        current_program = {'name': name, 'program': program}
+    return {'status': 'success'}
+    
+
+def process_command(data):
+    try:
+        cmds = loads(data)
+    except:
+        return {'error': 'parse'}
+    if type(cmds) != list or not cmds:
+        return {'error': 'format'}
+    cmd = cmds[0]
+    args = cmds[1:]
+    if cmd == 'list':
+        return list_programs()
+    elif cmd == 'edit':
+        if len(args) != 2:
+            return {'error': 'format'}
+        name = args[0]
+        code = args[1]
+        return edit_program(name, code)
+    elif cmd == 'delete':
+        if not args:
+            return {'error': 'format'}
+        return delete_programs(args)
+    elif cmd == 'set':
+        if len(args) != 1:
+            return None
+        name = args[0]
+        return set_program(name)
+    else:
+        return {'error': 'format'}
+
+
+fruit2pi = None
+current_program = {'name': 'default', 'program': 'fruit2pi.send(event)'}
 
 
 # Define a client to listen to local key events
@@ -50,6 +103,8 @@ class Keyboard():
         self.btkservice = self.bus.get_object(
             'org.fruit2pi.btkbservice', '/org/fruit2pi/btkbservice')
         self.iface = dbus.Interface(self.btkservice, 'org.fruit2pi.btkbservice')
+        global fruit2pi
+        fruit2pi = self
         print("waiting for keyboard")
         # keep trying to key a keyboard
         have_dev = False
@@ -85,29 +140,31 @@ class Keyboard():
                     # if the current space if empty and the key is being pressed
                     self.state[i] = hex_key
                     break
+        return self.state
 
     # poll for keyboard events
     def event_loop(self):
+        global current_program
         while True:
             try:
                 for event in self.dev.read_loop():
                     # only bother if we hit a key and its an up or down event
                     if event.type == ecodes.EV_KEY and event.value < 2:
-                        self.change_state(event)
-                        self.send_input()
+                        event = self.change_state(event)
+                        eval(current_program['program'])
             except BaseException as e:
                 print('An error occurred:', file=sys.stderr)
                 print(e.__repr__(), file=sys.stderr)
 
     # forward keyboard events to the dbus service
-    def send_input(self):
+    def send(self, event):
         bin_str = ""
-        state = self.state
+        state = event
         print(*state)
         element = state[2]
         for bit in element:
             bin_str += str(bit)
-        self.iface.on_receive_keys(int(bin_str, 2), self.state[4:10])
+        self.iface.send_key(int(bin_str, 2), self.state[4:10])
 
 
 if __name__ == "__main__":

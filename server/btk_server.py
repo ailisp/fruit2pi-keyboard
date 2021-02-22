@@ -25,61 +25,6 @@ logging.basicConfig(level=logging.DEBUG)
 
 programs_dir = os.path.join(sys.path[0], 'programs')
 
-def list_programs():
-    return {'programs': os.listdir(programs_dir)}
-
-def edit_program(name, code):
-    with open(os.path.join(programs_dir, name), 'w') as f:
-        f.write(code)
-    return {'status': 'success'}
-
-def delete_programs(names):
-    for name in names:
-        f = os.path.join(programs_dir, names)
-        if os.path.exists(f):
-            os.remove(f)
-    return {'status': 'success'}
-
-def set_program(name):
-    global current_program
-    with open(os.path.join(programs_dir, name)) as f:
-        program = f.read()
-        current_program = {'name': name, 'program': program}
-    return {'status': 'success'}
-    
-
-def process_command(data):
-    try:
-        cmds = loads(data)
-    except:
-        return {'error': 'parse'}
-    if type(cmds) != list or not cmds:
-        return {'error': 'format'}
-    cmd = cmds[0]
-    args = cmds[1:]
-    if cmd == 'list':
-        return list_programs()
-    elif cmd == 'edit':
-        if len(args) != 2:
-            return {'error': 'format'}
-        name = args[0]
-        code = args[1]
-        return edit_program(name, code)
-    elif cmd == 'delete':
-        if not args:
-            return {'error': 'format'}
-        return delete_programs(args)
-    elif cmd == 'set':
-        if len(args) != 1:
-            return None
-        name = args[0]
-        return set_program(name)
-    else:
-        return {'error': 'format'}
-
-
-fruit2pi = None
-current_program = {'name': 'default', 'program': 'fruit2pi.send(event)'}
 
 class BTKbDevice():
     # change these constants
@@ -142,39 +87,24 @@ class BTKbDevice():
             socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)  # BluetoothSocket(L2CAP)
         self.sinterrupt = socket.socket(
             socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)  # BluetoothSocket(L2CAP)
-        self.scommand = socket.socket(
-            socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
         self.scontrol.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sinterrupt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.scommand.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
         # bind these sockets to a port - port zero to select next available
         self.scontrol.bind((socket.BDADDR_ANY, self.P_CTRL))
         self.sinterrupt.bind((socket.BDADDR_ANY, self.P_INTR))
-        self.scommand.bind((socket.BDADDR_ANY, 21))
 
         # Start listening on the server sockets
         self.scontrol.listen(5)
         self.sinterrupt.listen(5)
-        self.scommand.listen(5)
 
-        self.scontrol.setblocking(False)
-        self.sinterrupt.setblocking(False)
-        self.scommand.setblocking(False)
+        self.ccontrol, cinfo = self.scontrol.accept()
+        print (
+            "\033[0;32mGot a connection on the control channel from %s \033[0m" % cinfo[0])
 
-        sel = selectors.DefaultSelector()
-        def accept_control(sock, mask):
-            self.ccontrol, cinfo = sock.accept()
-            self.ccontrol.setblocking(False)
-            print ("\033[0;32mGot a connection on the control channel from %s \033[0m" % cinfo[0])
-        sel.register(self.scontrol, selectors.EVENT_READ, accept_control)
-
-        def accept_interrupt(sock, mask):
-            self.cinterrupt, cinfo = sock.accept()
-            self.ccontrol.setblocking(False)
-            print (
-                "\033[0;32mGot a connection on the interrupt channel from %s \033[0m" % cinfo[0])
-        sel.register(self.sinterrupt, selectors.EVENT_READ, accept_interrupt)
+        self.cinterrupt, cinfo = self.sinterrupt.accept()
+        print (
+            "\033[0;32mGot a connection on the interrupt channel from %s \033[0m" % cinfo[0])
+        
 
         def read_command(conn, mask):
             data = conn.recv(65535)  # Should be ready
@@ -201,7 +131,7 @@ class BTKbDevice():
                 callback(key.fileobj, mask)
     
     # send a string to the bluetooth host machine
-    def send(self, message):
+    def send_string(self, message):
         try:
             print('--------------')
             print(bytes(message))
@@ -231,12 +161,10 @@ class BTKbService(dbus.service.Object):
         # create and setup our device
         self.device = BTKbDevice()
         # start listening for connections
-        t = threading.Thread(target=self.device.listen, args=())
-        t.daemon = True
-        t.start()
+        self.device.listen()
 
     @dbus.service.method('org.fruit2pi.btkbservice', in_signature='yay')
-    def on_receive_keys(self, modifier_byte, keys):
+    def send_key(self, modifier_byte, keys):
         global current_program
         print("Get on_receive_keys request through dbus")
         print("key msg: ", keys)
@@ -247,8 +175,7 @@ class BTKbService(dbus.service.Object):
             if(count < 10):
                 state[count] = int(key_code)
             count += 1
-        event = state
-        eval(current_program['program'])
+        self.device.send_string(state)
 
     @dbus.service.method('org.fruit2pi.btkbservice', in_signature='yay')
     def send_mouse(self, modifier_byte, keys):
@@ -259,14 +186,6 @@ class BTKbService(dbus.service.Object):
                 state[count] = int(key_code)
             count += 1
         self.device.send_string(state)
-    
-    @dbus.service.method('org.fruit2pi.btkbservice', in_signature='ay')
-    def send_data(self, data):
-        self.device.send_string(data)
-
-    @dbus.service.method('org.fruit2pi.btkbservice', in_signature='ay')
-    def send_control_data(self, data):
-        self.device.send_control_string(data)
 
 
 # main routine
