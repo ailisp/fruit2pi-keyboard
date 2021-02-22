@@ -13,6 +13,9 @@ import time
 import evdev  # used to get input from the keyboard
 from evdev import *
 import keymap  # used to map evdev input to hid keodes
+import selectors
+from cbor._cbor import dumps, loads
+import socket
 
 def list_programs():
     return {'programs': os.listdir(programs_dir)}
@@ -108,6 +111,11 @@ class Keyboard():
         print("waiting for keyboard")
         # keep trying to key a keyboard
         have_dev = False
+        self.scommand = socket.socket(
+            socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
+        self.scommand.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.scommand.listen(5)
+        self.scommand.setblocking(False)
         while have_dev == False:
             try:
                 # try and get a keyboard - should always be event0 as
@@ -144,14 +152,37 @@ class Keyboard():
 
     # poll for keyboard events
     def event_loop(self):
+        sel = selectors.DefaultSelector()
+        def do_kbd_ev(fd, mask):
+            for event in self.dev.read():
+                if event.type == ecodes.EV_KEY and event.value < 2:
+                    event = self.change_state(event)
+                    eval(current_program['program'])
+        def do_cmd(conn, mask):
+            data = conn.recv(65535)  # Should be ready
+            if data:
+                resp = process_command(data)
+                conn.send(dumps(resp))
+            else:
+                print('closing', conn)
+                sel.unregister(conn)
+                conn.close()
+        def do_cmd_conn(sock, mask):
+            self.ccommand, cinfo = sock.accept()
+            self.ccommand.setblocking(False)
+            print (
+                "\033[0;32mGot a connection on the command port from %s \033[0m" % cinfo[0])
+            sel.register(self.ccommand, selectors.EVENT_READ, do_cmd)
+        sel.register(self.dev.fd, selectors.EVENT_READ, do_kbd_ev)
+        sel.register(self.scommand, selectors.EVENT_READ, do_cmd_conn)
         global current_program
         while True:
             try:
-                for event in self.dev.read_loop():
-                    # only bother if we hit a key and its an up or down event
-                    if event.type == ecodes.EV_KEY and event.value < 2:
-                        event = self.change_state(event)
-                        eval(current_program['program'])
+                events = sel.select()
+                for key, mask in events:
+                    callback = key.data
+                    callback(key.fileobj, mask)
+
             except BaseException as e:
                 print('An error occurred:', file=sys.stderr)
                 print(e.__repr__(), file=sys.stderr)

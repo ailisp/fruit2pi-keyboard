@@ -17,9 +17,7 @@ from gi.repository import GLib
 from dbus.mainloop.glib import DBusGMainLoop
 import logging
 from logging import debug, info, warning, error
-import selectors
-import threading
-from cbor._cbor import dumps, loads
+
 
 logging.basicConfig(level=logging.DEBUG)
 
