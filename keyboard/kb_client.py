@@ -160,7 +160,7 @@ class Keyboard():
             for event in self.dev.read():
                 if event.type == ecodes.EV_KEY and event.value < 2:
                     event = self.change_state(event)
-                    eval(compile(current_program['program'], current_program['name'], 'single'))
+                    eval(compile(current_program['program'], current_program['name'], 'module'))
         def do_cmd(conn, mask):
             data = conn.recv(65535)  # Should be ready
             if data:
