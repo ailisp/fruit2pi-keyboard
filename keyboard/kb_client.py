@@ -114,6 +114,7 @@ class Keyboard():
         self.scommand = socket.socket(
             socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
         self.scommand.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.scommand.bind((socket.BDADDR_ANY, 21))
         self.scommand.listen(5)
         self.scommand.setblocking(False)
         while have_dev == False:
