@@ -79,5 +79,9 @@ if __name__ == '__main__':
         sock = connect_keyboard(addr)
         if sock:
             print(send_command(sock, ['list']))
+            print(send_command(sock, ['edit', 'double', 'fruit2pi.send(event)\nfruit2pi.send(event)']))
+            print(send_command(sock, ['list']))
+            print(send_command(sock, ['set', 'double']))
+
     else:
         print("could not find target bluetooth device nearby")
