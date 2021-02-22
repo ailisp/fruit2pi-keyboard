@@ -21,9 +21,6 @@ from logging import debug, info, warning, error
 
 logging.basicConfig(level=logging.DEBUG)
 
-programs_dir = os.path.join(sys.path[0], 'programs')
-
-
 class BTKbDevice():
     # change these constants
     MY_DEV_NAME = "Fruit2pi_Keyboard"

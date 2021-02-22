@@ -17,6 +17,8 @@ import selectors
 from cbor._cbor import dumps, loads
 import socket
 
+programs_dir = os.path.join(sys.path[0], 'programs')
+
 def list_programs():
     return {'programs': os.listdir(programs_dir)}
 
