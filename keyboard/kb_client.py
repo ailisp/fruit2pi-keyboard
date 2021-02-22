@@ -183,10 +183,10 @@ class Keyboard():
                 for key, mask in events:
                     callback = key.data
                     callback(key.fileobj, mask)
-
             except BaseException as e:
                 print('An error occurred:', file=sys.stderr)
                 print(e.__repr__(), file=sys.stderr)
+                print(e, file=sys.stderr)
 
     # forward keyboard events to the dbus service
     def send(self, event):
