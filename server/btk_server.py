@@ -103,31 +103,6 @@ class BTKbDevice():
         print (
             "\033[0;32mGot a connection on the interrupt channel from %s \033[0m" % cinfo[0])
         
-
-        def read_command(conn, mask):
-            data = conn.recv(65535)  # Should be ready
-            if data:
-                resp = process_command(data)
-                conn.send(dumps(resp))
-            else:
-                print('closing', conn)
-                sel.unregister(conn)
-                conn.close()
-
-        def accept_command(sock, mask):
-            self.ccommand, cinfo = sock.accept()
-            self.ccommand.setblocking(False)
-            print (
-                "\033[0;32mGot a connection on the command port from %s \033[0m" % cinfo[0])
-            sel.register(self.ccommand, selectors.EVENT_READ, read_command)
-        sel.register(self.scommand, selectors.EVENT_READ, accept_command)
-
-        while True:
-            events = sel.select()
-            for key, mask in events:
-                callback = key.data
-                callback(key.fileobj, mask)
-    
     # send a string to the bluetooth host machine
     def send_string(self, message):
         try:
