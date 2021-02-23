@@ -104,10 +104,7 @@ class Keyboard():
 
         print("setting up DBus Client")
 
-        self.bus = dbus.SystemBus()
-        self.btkservice = self.bus.get_object(
-            'org.fruit2pi.btkbservice', '/org/fruit2pi/btkbservice')
-        self.iface = dbus.Interface(self.btkservice, 'org.fruit2pi.btkbservice')
+        self.config_dbus()
         global fruit2pi
         fruit2pi = self
         print("waiting for keyboard")
@@ -129,6 +126,12 @@ class Keyboard():
                 print("Keyboard not found, waiting 3 seconds and retrying")
                 time.sleep(3)
             print("found a keyboard")
+    
+    def config_dbus(self):
+        self.bus = dbus.SystemBus()
+        self.btkservice = self.bus.get_object(
+            'org.fruit2pi.btkbservice', '/org/fruit2pi/btkbservice')
+        self.iface = dbus.Interface(self.btkservice, 'org.fruit2pi.btkbservice')
 
     def change_state(self, event):
         evdev_code = ecodes.KEY[event.code]
@@ -185,6 +188,11 @@ class Keyboard():
                 for key, mask in events:
                     callback = key.data
                     callback(key.fileobj, mask)
+            except dbus.DBusException as e:
+                print('A dbus error occurred:', file=sys.stderr)
+                print(e.__repr__(), file=sys.stderr)
+                print('reconfig dbus', file=sys.stderr)
+                self.config_dbus()
             except BaseException as e:
                 print('An error occurred:', file=sys.stderr)
                 print(e.__repr__(), file=sys.stderr)
