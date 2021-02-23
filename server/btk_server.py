@@ -92,6 +92,7 @@ class BTKbDevice():
         self.scontrol.listen(5)
         self.sinterrupt.listen(5)
 
+    def accept_conn(self):
         self.ccontrol, cinfo = self.scontrol.accept()
         print (
             "\033[0;32mGot a connection on the control channel from %s \033[0m" % cinfo[0])
@@ -99,7 +100,7 @@ class BTKbDevice():
         self.cinterrupt, cinfo = self.sinterrupt.accept()
         print (
             "\033[0;32mGot a connection on the interrupt channel from %s \033[0m" % cinfo[0])
-        
+
     # send a string to the bluetooth host machine
     def send_string(self, message):
         try:
@@ -109,6 +110,9 @@ class BTKbDevice():
         except OSError as err:
             print('error in send_string')
             error(err)
+            self.cinterrupt.close()
+            self.ccontrol.close()
+            self.accept_conn()
 
     def send_control_string(self, message):
         try:
@@ -118,6 +122,9 @@ class BTKbDevice():
         except OSError as err:
             print('error in send_control_string')
             error(err)
+            self.cinterrupt.close()
+            self.ccontrol.close()
+            self.accept_conn()
 
 
 class BTKbService(dbus.service.Object):

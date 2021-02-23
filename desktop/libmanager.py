@@ -82,6 +82,8 @@ if __name__ == '__main__':
             print(send_command(sock, ['edit', 'double', 'fruit2pi.send(event)\nfruit2pi.send(event)']))
             print(send_command(sock, ['list']))
             print(send_command(sock, ['set', 'double']))
+            print(send_command(sock, ['edit', 'maybe', 'import random\nif random.random()>0.5:\n    fruit2pi.send(event)']))
+            print(send_command(sock, ['set', 'maybe']))
 
     else:
         print("could not find target bluetooth device nearby")
