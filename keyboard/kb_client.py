@@ -39,7 +39,7 @@ def set_program(name):
     with open(os.path.join(programs_dir, name)) as f:
         program = f.read()
         current_program = {'name': name, 'program': program}
-    with open(os.path.join(sys.path[0], current_program), 'w') as f:
+    with open(os.path.join(sys.path[0], 'current_program'), 'w') as f:
         f.write(name)
     return {'status': 'success', 'current_program': name}
     
@@ -83,7 +83,7 @@ class Keyboard():
 
     def __init__(self):
         name = None
-        with open(os.path.join(sys.path[0], current_program)) as f:
+        with open(os.path.join(sys.path[0], 'current_program')) as f:
             try:
                 name = f.read()
             except:
