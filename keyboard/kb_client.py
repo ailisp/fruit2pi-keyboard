@@ -39,7 +39,9 @@ def set_program(name):
     with open(os.path.join(programs_dir, name)) as f:
         program = f.read()
         current_program = {'name': name, 'program': program}
-    return {'status': 'success'}
+    with open(os.path.join(sys.path[0], current_program), 'w') as f:
+        f.write(name)
+    return {'status': 'success', 'current_program': name}
     
 
 def process_command(data):
@@ -73,15 +75,22 @@ def process_command(data):
 
 
 fruit2pi = None
-current_program = {'name': 'default', 'program': 'fruit2pi.send(event)'}
+current_program = None
 
 
 # Define a client to listen to local key events
 class Keyboard():
 
     def __init__(self):
+        name = None
+        with open(os.path.join(sys.path[0], current_program)) as f:
+            try:
+                name = f.read()
+            except:
+                name = 'default'
+        set_program(name)
+        
         # the structure for a bt keyboard input report (size is 10 bytes)
-
         self.state = [
             0xA1,  # this is an input report
             0x01,  # Usage report = Keyboard
