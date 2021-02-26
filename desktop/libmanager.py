@@ -4,6 +4,8 @@ import os
 from PySide6.QtCore import QStandardPaths
 import json
 
+APP_NAME = 'Fruit2Pi Keyboard Manager'
+
 class Config(object):
     _instance = None
     config = {}
@@ -78,12 +80,13 @@ if __name__ == '__main__':
     if addr:
         sock = connect_keyboard(addr)
         if sock:
+            print(type(sock))
             print(send_command(sock, ['list']))
             print(send_command(sock, ['edit', 'double', 'fruit2pi.send(event)\nfruit2pi.send(event)']))
             print(send_command(sock, ['list']))
             print(send_command(sock, ['set', 'double']))
             print(send_command(sock, ['edit', 'maybe', 'import random\nif random.random()>0.5:\n    fruit2pi.send(event)']))
-            print(send_command(sock, ['set', 'maybe']))
+            print(send_command(sock, ['set', 'default']))
 
     else:
         print("could not find target bluetooth device nearby")

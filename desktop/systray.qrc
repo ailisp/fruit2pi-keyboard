@@ -1,0 +1,13 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource prefix="/">
+   <file>images/bad.png</file>
+   <file>images/heart.png</file>
+   <file>images/trash.png</file>
+   <file>images/Adventure-Map-icon.png</file>
+   <file>images/Spell-Book-icon.png</file>
+   <file>images/Spell-Scroll-icon.png</file>
+   <file>images/Sword-icon.png</file>
+   <file>images/yammi-banana-icon.png</file>
+
+</qresource>
+</RCC>

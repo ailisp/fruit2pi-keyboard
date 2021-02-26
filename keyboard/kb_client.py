@@ -20,7 +20,8 @@ import socket
 programs_dir = os.path.join(sys.path[0], 'programs')
 
 def list_programs():
-    return {'programs': os.listdir(programs_dir)}
+    global current_program
+    return {'programs': os.listdir(programs_dir), 'current_program': current_program}
 
 def edit_program(name, code):
     with open(os.path.join(programs_dir, name), 'w') as f:
@@ -33,6 +34,11 @@ def delete_programs(names):
         if os.path.exists(f):
             os.remove(f)
     return {'status': 'success'}
+
+def load_program(name):
+    with open(os.path.join(programs_dir, name)) as f:
+        program = f.read()
+    return {'program': program}
 
 def set_program(name):
     global current_program
@@ -67,9 +73,14 @@ def process_command(data):
         return delete_programs(args)
     elif cmd == 'set':
         if len(args) != 1:
-            return None
+            return {'error': 'format'}
         name = args[0]
         return set_program(name)
+    elif cmd == 'load':
+        if len(args) != 1:
+            return {'error': 'format'}
+        name = arags[0]
+        return load_program(name)
     else:
         return {'error': 'format'}
 
