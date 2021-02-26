@@ -30,7 +30,7 @@ def edit_program(name, code):
 
 def delete_programs(names):
     for name in names:
-        f = os.path.join(programs_dir, names)
+        f = os.path.join(programs_dir, name)
         if os.path.exists(f):
             os.remove(f)
     return {'status': 'success'}

@@ -1,12 +1,11 @@
 from PySide6.QtCore import Slot, QSize, QThread, Signal
-from PySide6.QtGui import QAction, QIcon, QStandardItemModel, QStandardItem, QBrush
+from PySide6.QtGui import QAction, QIcon, QStandardItemModel, QStandardItem, QBrush, QColor
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog,
                                QGridLayout, QGroupBox, QHBoxLayout, QLabel,
                                QLineEdit, QMenu, QMessageBox, QPushButton,
                                QSpinBox, QStyle, QSystemTrayIcon, QTextEdit,
                                QVBoxLayout, QTabWidget, QTextBrowser, QWidget,
                                QListView)
-from PySide6 import Qt
 from bluetooth.bluez import BluetoothSocket
 import rc_systray
 from libmanager import APP_NAME, Config, connect_keyboard, find_keyboard, send_command
@@ -42,7 +41,7 @@ class DeleteProgram(QThread):
         self.name = name
     
     def run(self):
-        send_command(self.sock, ['delete', self.name])
+        send_command(self.sock, ['delete', [self.name]])
         self.deleted.emit(self.name)
 
 class SetProgram(QThread):
@@ -185,6 +184,7 @@ class Window(QDialog):
         selected = selected[0].data()
         loadProgram = LoadProgram(self.cmdSocket, selected)
         loadProgram.loaded.connect(self.programLoaded)
+        loadProgram.start()
         self.waitDialog.exec_()
     
     @Slot()
@@ -193,8 +193,9 @@ class Window(QDialog):
         if not selected:
             return
         selected = selected[0].data()
-        loadProgram = DeleteProgram(self.cmdSocket, selected)
-        loadProgram.deleted.connect(self.programDeleted)
+        deleteWorker = DeleteProgram(self.cmdSocket, selected)
+        deleteWorker.deleted.connect(self.programDeleted)
+        deleteWorker.start()
         self.waitDialog.exec_()
     
     @Slot()
@@ -203,8 +204,9 @@ class Window(QDialog):
         if not selected:
             return
         selected = selected[0].data()
-        loadProgram = SetProgram(self.cmdSocket, selected)
-        loadProgram.setDone.connect(self.programSet)
+        setWorker = SetProgram(self.cmdSocket, selected)
+        setWorker.setDone.connect(self.programSet)
+        setWorker.start()
         self.waitDialog.exec_()
     
     @Slot(str, str)
@@ -238,7 +240,6 @@ class Window(QDialog):
         self.listProgram = ListProgram(self.cmdSocket)
         self.listProgram.listed.connect(self.programListUpdated)
         self.listProgram.start()
-        self.waitDialog.close()
     
     @Slot(list, str)
     def programListUpdated(self, programs, current_program):
@@ -249,7 +250,7 @@ class Window(QDialog):
         for p in programs:
             item = QStandardItem(p)
             if p == current_program:
-                item.setForeground(QBrush(Qt.green))
+                item.setForeground(QBrush(QColor(0, 0, 255, 127)))
             self.programsListModel.appendRow(item)
 
     def setVisible(self, visible):
