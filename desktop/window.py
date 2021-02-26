@@ -30,6 +30,7 @@ class ListProgram(QThread):
     
     def run(self):
         res = send_command(self.sock, ['list'])
+        print(res)
         self.listed.emit(res['programs'], res['current_program'])
 
 class DeleteProgram(QThread):
@@ -48,7 +49,7 @@ class SetProgram(QThread):
     setDone = Signal(str)
 
     def __init__(self, sock, name):
-        super(DeleteProgram, self).__init__()
+        super(SetProgram, self).__init__()
         self.sock = sock
         self.name = name
     
@@ -242,6 +243,7 @@ class Window(QDialog):
     @Slot(list, str)
     def programListUpdated(self, programs, current_program):
         print(programs)
+        print(current_program)
         self.waitDialog.close()
         self.programsListModel.clear()
         for p in programs:

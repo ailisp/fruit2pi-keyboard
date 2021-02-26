@@ -21,7 +21,7 @@ programs_dir = os.path.join(sys.path[0], 'programs')
 
 def list_programs():
     global current_program
-    return {'programs': os.listdir(programs_dir), 'current_program': current_program}
+    return {'programs': os.listdir(programs_dir), 'current_program': current_program['name']}
 
 def edit_program(name, code):
     with open(os.path.join(programs_dir, name), 'w') as f:
