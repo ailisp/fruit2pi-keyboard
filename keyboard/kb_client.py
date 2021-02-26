@@ -79,7 +79,7 @@ def process_command(data):
     elif cmd == 'load':
         if len(args) != 1:
             return {'error': 'format'}
-        name = arags[0]
+        name = args[0]
         return load_program(name)
     else:
         return {'error': 'format'}

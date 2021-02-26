@@ -41,7 +41,7 @@ class DeleteProgram(QThread):
         self.name = name
     
     def run(self):
-        send_command(self.sock, ['delete', [self.name]])
+        send_command(self.sock, ['delete', self.name])
         self.deleted.emit(self.name)
 
 class SetProgram(QThread):
@@ -55,6 +55,19 @@ class SetProgram(QThread):
     def run(self):
         send_command(self.sock, ['set', self.name])
         self.setDone.emit(self.name)
+
+class EditProgram(QThread):
+    edited = Signal(str)
+
+    def __init__(self, sock, name, program):
+        super(EditProgram, self).__init__()
+        self.sock = sock
+        self.name = name
+        self.program = program
+    
+    def run(self):
+        send_command(self.sock, ['edit', self.name, self.program])
+        self.edited.emit(self.name)
 
 class LoadProgram(QThread):
     loaded = Signal(str, str)
@@ -149,6 +162,9 @@ class Window(QDialog):
         self.codeEditLayout.addLayout(self.codeEditNameBox)
         self.codeEditLayout.addWidget(self.codeEdit)
         self.codeEditPage.setLayout(self.codeEditLayout)
+        self.codeEditLastCode = ''
+        self.codeEditNameBoxSaveButton.clicked.connect(self.saveEditProgram)
+        self.codeEditNameBoxCancelButton.clicked.connect(self.cancelEditProgram)
 
         self.documentation = QTextBrowser()
 
@@ -174,6 +190,7 @@ class Window(QDialog):
     def newProgram(self):
         self.tabWidget.setCurrentWidget(self.codeEditPage)
         self.codeEdit.setPlainText("")
+        self.codeEditLastCode = ''
         self.codeEditNameBoxNameInput.setText("")
     
     @Slot()
@@ -186,6 +203,21 @@ class Window(QDialog):
         loadProgram.loaded.connect(self.programLoaded)
         loadProgram.start()
         self.waitDialog.exec_()
+    
+    @Slot()
+    def saveEditProgram(self):
+        name = self.codeEditNameBoxNameInput.text()
+        program = self.codeEdit.toPlainText()
+        if not name:
+            return
+        editProgramWorker = EditProgram(self.cmdSocket, name, program)
+        editProgramWorker.edited.connect(self.programSaved)
+        editProgramWorker.start()
+        self.waitDialog.exec_()
+    
+    @Slot()
+    def cancelEditProgram(self):
+        self.codeEdit.setPlainText(self.codeEditLastCode)
     
     @Slot()
     def deleteProgram(self):
@@ -214,6 +246,7 @@ class Window(QDialog):
         self.waitDialog.close()
         self.tabWidget.setCurrentWidget(self.codeEditPage)
         self.codeEdit.setPlainText(program)
+        self.codeEditLastCode = program
         self.codeEditNameBoxNameInput.setText(name)
 
     @Slot(str)
@@ -223,6 +256,11 @@ class Window(QDialog):
     @Slot(str)
     def programSet(self, name):
         self.updateProgramsList()
+    
+    @Slot(str)
+    def programSaved(self, name):
+        self.updateProgramsList()
+        self.tabWidget.setCurrentWidget(self.programsListPage)
     
     def findKeyboard(self):
         self.waitDialog = QDialog()
