@@ -1,4 +1,4 @@
-from PySide6.QtCore import Slot, QSize, QThread, Signal
+from PySide6.QtCore import Slot, QSize, QThread, Signal, Qt
 from PySide6.QtGui import QAction, QIcon, QStandardItemModel, QStandardItem, QBrush, QColor
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog,
                                QGridLayout, QGroupBox, QHBoxLayout, QLabel,
@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog,
 from bluetooth.bluez import BluetoothSocket
 import rc_systray
 from libmanager import APP_NAME, Config, connect_keyboard, find_keyboard, send_command
+import time
 
 class ConnectKeyboard(QThread):
     found = Signal(str)
@@ -103,14 +104,6 @@ class Window(QDialog):
         self.bodyEdit = QTextEdit()
         self.showMessageButton = QPushButton()
 
-        self.minimizeAction = QAction()
-        self.maximizeAction = QAction()
-        self.restoreAction = QAction()
-        self.quitAction = QAction()
-
-        self.trayIcon = QSystemTrayIcon()
-        self.trayIconMenu = QMenu()
-
         self.createIconGroupBox()
         self.createMessageGroupBox()
 
@@ -120,7 +113,6 @@ class Window(QDialog):
         self.createTrayIcon()
 
         self.showMessageButton.clicked.connect(self.showMessage)
-        self.showIconCheckBox.toggled.connect(self.trayIcon.setVisible)
         self.iconComboBox.currentIndexChanged.connect(self.setIcon)
         self.trayIcon.messageClicked.connect(self.messageClicked)
         self.trayIcon.activated.connect(self.iconActivated)
@@ -185,8 +177,23 @@ class Window(QDialog):
         self.trayIcon.show()
 
         self.setWindowTitle(APP_NAME)
+        self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.Dialog)
+
         self.resize(800, 600)
-        self.findKeyboard()
+
+        self.systrayHintMsgShowed = False
+        self.firstShow = True
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if self.firstShow:
+            self.firstShow = False
+            self.createWaitDialog()
+            self.findKeyboard()
+
+    def closeWaitDialog(self):
+        time.sleep(1)
+        self.waitDialog.close()
 
     @Slot()
     def newProgram(self):
@@ -205,8 +212,8 @@ class Window(QDialog):
         loadProgram = LoadProgram(self.cmdSocket, selected)
         loadProgram.loaded.connect(self.programLoaded)
         loadProgram.start()
-        self.waitDialog.exec_()
-    
+        self.showWaitDialog("Loading program ...")
+
     @Slot()
     def saveEditProgram(self):
         name = self.codeEditNameBoxNameInput.text()
@@ -216,12 +223,12 @@ class Window(QDialog):
         editProgramWorker = EditProgram(self.cmdSocket, name, program)
         editProgramWorker.edited.connect(self.programSaved)
         editProgramWorker.start()
-        self.waitDialog.exec_()
-    
+        self.showWaitDialog("Saving program ...")
+
     @Slot()
     def cancelEditProgram(self):
         self.codeEdit.setPlainText(self.codeEditLastCode)
-    
+
     @Slot()
     def deleteProgram(self):
         selected = self.programsList.selectedIndexes()
@@ -231,8 +238,8 @@ class Window(QDialog):
         deleteWorker = DeleteProgram(self.cmdSocket, selected)
         deleteWorker.deleted.connect(self.programDeleted)
         deleteWorker.start()
-        self.waitDialog.exec_()
-    
+        self.showWaitDialog("Deleting program ...")
+
     @Slot()
     def setProgram(self):
         selected = self.programsList.selectedIndexes()
@@ -242,11 +249,11 @@ class Window(QDialog):
         setWorker = SetProgram(self.cmdSocket, selected)
         setWorker.setDone.connect(self.programSet)
         setWorker.start()
-        self.waitDialog.exec_()
-    
+        self.showWaitDialog("Setting program ...")
+
     @Slot(str, str)
     def programLoaded(self, name, program):
-        self.waitDialog.close()
+        self.closeWaitDialog()
         self.tabWidget.setCurrentWidget(self.codeEditPage)
         self.codeEdit.setPlainText(program)
         self.codeEditLastCode = program
@@ -255,23 +262,34 @@ class Window(QDialog):
     @Slot(str)
     def programDeleted(self, name):
         self.updateProgramsList()
-    
+
     @Slot(str)
     def programSet(self, name):
         self.updateProgramsList()
-    
+
     @Slot(str)
     def programSaved(self, name):
         self.updateProgramsList()
         self.tabWidget.setCurrentWidget(self.programsListPage)
-    
+
+    def createWaitDialog(self):
+        self.waitDialog = QDialog(self)
+        self.waitDialogLayout = QHBoxLayout()
+        self.waitDialogLabel = QLabel()
+        self.waitDialogLayout.addWidget(self.waitDialogLabel)
+        self.waitDialog.setLayout(self.waitDialogLayout)
+        self.waitDialog.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
+
+    def showWaitDialog(self, text='Please wait...'):
+        self.waitDialogLabel.setText(text)
+        self.waitDialog.exec_()
+
     def findKeyboard(self):
-        self.waitDialog = QDialog()
         find = ConnectKeyboard()
         find.connected.connect(self.keyboardConnected)
         find.start()
-        self.waitDialog.exec_()
-    
+        self.showWaitDialog('Finding and connecting Fruit2Pi Keyboard ...')
+
     @Slot(BluetoothSocket)
     def keyboardConnected(self, socket):
         self.cmdSocket = socket
@@ -286,7 +304,7 @@ class Window(QDialog):
     def programListUpdated(self, programs, current_program):
         print(programs)
         print(current_program)
-        self.waitDialog.close()
+        self.closeWaitDialog()
         self.programsListModel.clear()
         for p in programs:
             item = QStandardItem(p)
@@ -295,21 +313,22 @@ class Window(QDialog):
             self.programsListModel.appendRow(item)
 
     def setVisible(self, visible):
-        self.minimizeAction.setEnabled(visible)
-        self.maximizeAction.setEnabled(not self.isMaximized())
-        self.restoreAction.setEnabled(self.isMaximized() or not visible)
         super().setVisible(visible)
 
     def closeEvent(self, event):
         if not event.spontaneous() or not self.isVisible():
             return
-        if self.trayIcon.isVisible():
-            QMessageBox.information(self, "Systray",
-                                    "The program will keep running in the system tray. "
-                                    "To terminate the program, choose <b>Quit</b> in the context "
-                                    "menu of the system tray entry.")
-            self.hide()
-            event.ignore()
+        if not self.systrayHintMsgShowed:
+            self.systrayHintMsgShowed = True
+            icon = QIcon(":/images/yammi-banana-icon.png")
+            self.trayIcon.showMessage(APP_NAME,
+                                      "Running on background"
+                                      "To quit, choose <b>Quit</b> in the icon menu",
+                                      icon,
+                                      5000
+                                      )
+        self.hide()
+        event.ignore()
 
     @Slot(int)
     def setIcon(self, index):
@@ -320,14 +339,11 @@ class Window(QDialog):
 
     @Slot(str)
     def iconActivated(self, reason):
+        print(reason)
         if reason == QSystemTrayIcon.Trigger:
-            pass
+            self.showNormal()
         if reason == QSystemTrayIcon.DoubleClick:
-            self.iconComboBox.setCurrentIndex(
-                (self.iconComboBox.currentIndex() + 1) % self.iconComboBox.count()
-            )
-        if reason == QSystemTrayIcon.MiddleClick:
-            self.showMessage()
+            self.showNormal()
 
     @Slot()
     def showMessage(self):
