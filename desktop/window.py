@@ -1,5 +1,5 @@
 from PySide6.QtCore import Slot, QSize, QThread, Signal, Qt
-from PySide6.QtGui import QAction, QIcon, QStandardItemModel, QStandardItem, QBrush, QColor
+from PySide6.QtGui import QAction, QIcon, QStandardItemModel, QStandardItem, QBrush, QColor, QCloseEvent
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog,
                                QGridLayout, QGroupBox, QHBoxLayout, QLabel,
                                QLineEdit, QMenu, QMessageBox, QPushButton,
@@ -183,6 +183,7 @@ class Window(QDialog):
 
         self.systrayHintMsgShowed = False
         self.firstShow = True
+        self.fromQuit = False
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -316,6 +317,8 @@ class Window(QDialog):
         super().setVisible(visible)
 
     def closeEvent(self, event):
+        if self.fromQuit:
+            return
         if not event.spontaneous() or not self.isVisible():
             return
         if not self.systrayHintMsgShowed:
@@ -469,6 +472,11 @@ class Window(QDialog):
         self.showNormal()
         self.tabWidget.setCurrentWidget(self.documentation)
 
+    @Slot()
+    def quit(self):
+        self.fromQuit = True
+        qApp.quit()
+
     def createActions(self):
         self.showProgramsAction = QAction("Programs", self)
         self.showProgramsAction.triggered.connect(self.showProgramsPage)
@@ -479,7 +487,7 @@ class Window(QDialog):
         self.showDocumentationAction = QAction("Documentation", self)
         self.showDocumentationAction.triggered.connect(self.showDocumentation)
         self.quitAction = QAction("Quit", self)
-        self.quitAction.triggered.connect(qApp.quit)
+        self.quitAction.triggered.connect(self.quit)
 
     def createTrayIcon(self):
         self.trayIconMenu = QMenu(self)
