@@ -147,6 +147,8 @@ class Window(QDialog):
         self.programsListButtonDelete.clicked.connect(self.deleteProgram)
         self.programsListButtonSet.clicked.connect(self.setProgram)
 
+        self.setProgramPage = QWidget()
+
         self.codeEditPage = QWidget()
         self.codeEditLayout = QVBoxLayout()
         self.codeEditNameBox = QHBoxLayout()
@@ -171,7 +173,7 @@ class Window(QDialog):
         self.tabWidget = QTabWidget()
         self.tabWidget.setIconSize(QSize(64, 64))
         self.tabWidget.addTab(self.programsListPage, QIcon(":/images/Spell-Scroll-icon.png"), "Programs")
-        self.tabWidget.addTab(self.messageGroupBox, QIcon(":/images/Adventure-Map-icon.png"), "Set Program")
+        self.tabWidget.addTab(self.setProgramPage, QIcon(":/images/Adventure-Map-icon.png"), "Set Program")
         self.tabWidget.addTab(self.codeEditPage, QIcon(":/images/Sword-icon.png"), "Program Editor")
         self.tabWidget.addTab(self.documentation, QIcon(":/images/Spell-Book-icon.png"), "Documentation")
 
@@ -188,6 +190,7 @@ class Window(QDialog):
 
     @Slot()
     def newProgram(self):
+        self.showNormal()
         self.tabWidget.setCurrentWidget(self.codeEditPage)
         self.codeEdit.setPlainText("")
         self.codeEditLastCode = ''
@@ -435,24 +438,40 @@ class Window(QDialog):
         messageLayout.setRowStretch(4, 1)
         self.messageGroupBox.setLayout(messageLayout)
 
+    @Slot()
+    def showProgramsPage(self):
+        self.showNormal()
+        self.tabWidget.setCurrentWidget(self.programsListPage)
+
+    @Slot()
+    def showSetProgramPage(self):
+        self.showNormal()
+        self.tabWidget.setCurrentWidget(self.setProgramPage)
+    
+    @Slot()
+    def showDocumentation(self):
+        self.showNormal()
+        self.tabWidget.setCurrentWidget(self.documentation)
+
     def createActions(self):
-        self.minimizeAction = QAction("Minimize", self)
-        self.minimizeAction.triggered.connect(self.hide)
-
-        self.maximizeAction = QAction("Maximize", self)
-        self.maximizeAction.triggered.connect(self.showMaximized)
-
-        self.restoreAction = QAction("Restore", self)
-        self.restoreAction.triggered.connect(self.showNormal)
-
+        self.showProgramsAction = QAction("Programs", self)
+        self.showProgramsAction.triggered.connect(self.showProgramsPage)
+        self.showSetProgramAction = QAction("Set Program", self)
+        self.showSetProgramAction.triggered.connect(self.showSetProgramPage)
+        self.showNewProgramAction = QAction("New Program", self)
+        self.showNewProgramAction.triggered.connect(self.newProgram)
+        self.showDocumentationAction = QAction("Documentation", self)
+        self.showDocumentationAction.triggered.connect(self.showDocumentation)
         self.quitAction = QAction("Quit", self)
         self.quitAction.triggered.connect(qApp.quit)
 
     def createTrayIcon(self):
         self.trayIconMenu = QMenu(self)
-        self.trayIconMenu.addAction(self.minimizeAction)
-        self.trayIconMenu.addAction(self.maximizeAction)
-        self.trayIconMenu.addAction(self.restoreAction)
+        self.trayIconMenu.addAction(self.showProgramsAction)
+        self.trayIconMenu.addAction(self.showSetProgramAction)
+        self.trayIconMenu.addAction(self.showNewProgramAction)
+        self.trayIconMenu.addAction(self.showDocumentationAction)
+
         self.trayIconMenu.addSeparator()
         self.trayIconMenu.addAction(self.quitAction)
 
